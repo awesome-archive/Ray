@@ -38,6 +38,7 @@ const string command[COMMAND_MAX] = {
   "--no-gpu",
   "--no-expand",
   "--device-id",
+  "--verbose",
 };
 
 //  コマンドの説明
@@ -60,6 +61,7 @@ const string errmessage[COMMAND_MAX] = {
   "Don't use GPU",
   "No MCTS",
   "Set GPU to use",
+  "Verbose log mode",
 };
 
 
@@ -148,23 +150,16 @@ AnalyzeCommand( int argc, char **argv )
 	SetUseNN(false);
 	break;
       case COMMAND_NO_GPU:
-	SetDeviceIds({ -1 });
+	SetDeviceId(-1);
 	break;
       case COMMAND_NO_EXPAND:
         SetNoExpand(true);
         break;
       case COMMAND_DEVICE_ID:
-      {
-        vector<int> device_ids;
-        char copy[BUF_SIZE];
-        STRCPY(copy, BUF_SIZE, argv[++i]);
-        char* token = strtok(copy, ",");
-        while (token != NULL) {
-          device_ids.push_back(atoi(token));
-          token = strtok(NULL, ",");
-        }
-        SetDeviceIds(device_ids);
-      }
+        SetDeviceId(atoi(argv[++i]));
+        break;
+      case COMMAND_VERBOSE:
+        SetVerbose(true);
         break;
       default:
 	for (int j = 0; j < COMMAND_MAX; j++){

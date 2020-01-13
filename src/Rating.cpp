@@ -46,7 +46,7 @@ float po_tactical_set2[PO_TACTICALS_MAX2];
 char po_params_path[1024];
 
 // ビットマスク
-unsigned int po_tactical_features_mask[F_MASK_MAX] = {
+const unsigned int po_tactical_features_mask[F_MASK_MAX] = {
   0x00000001,  0x00000002,  0x00000004,  0x00000008,
   0x00000010,  0x00000020,  0x00000040,  0x00000080,
   0x00000100,  0x00000200,  0x00000400,  0x00000800,
@@ -65,10 +65,10 @@ static int neighbor[UPDATE_NUM];
 static int cross[4];
 
 // 着手距離2, 3のγ値の補正
-double neighbor_bias = NEIGHBOR_BIAS;
+static double neighbor_bias = NEIGHBOR_BIAS;
 // 着手距離4のγ値の補正
-double jump_bias = JUMP_BIAS;
-double po_bias = PO_BIAS;
+static double jump_bias = JUMP_BIAS;
+
 
 // 隅のセキ
 static set<unsigned int> seki_22_set[2];
@@ -285,6 +285,7 @@ RatingMove(game_info_t *game, int color, std::mt19937_64 *mt, LGR& lgr)
   long long *sum_rate = &game->sum_rate[color - 1];
   int y, pos;
   long long rand_num;
+  static char stone[] = { '+', 'B', 'W', '#' };
 
   // レートの部分更新
   PartialRating(game, color, sum_rate, sum_rate_row, rate);
@@ -367,13 +368,25 @@ RatingMove(game_info_t *game, int color, std::mt19937_64 *mt, LGR& lgr)
     // 選ばれた手が合法手ならループを抜け出し
     // そうでなければその箇所のレートを0にし, 手を選びなおす
     if (IsLegalNotEye(game, pos, color)) {
+#if 0
+      if (IsBadMove(game, pos, color) && rate[pos] > 1) {
+        long long r = rate[pos];
+        *sum_rate -= rate[pos];
+        sum_rate_row[y] -= rate[pos];
+        rate[pos] = 1;
+        *sum_rate += rate[pos];
+        sum_rate_row[board_y[pos]] += rate[pos];
+        //if (game->moves < 250) { PrintBoard(game); cerr << "RETRY " << stone[color] << " " << r << " " << FormatMove(pos) << endl; }
+        continue;
+      }
+#endif
       int replace_num = 0;
       int replace[8];
       if (ReplaceMove(game, pos, color, replace, &replace_num)) {
         if (replace_num > 0) {
           int rep = replace[(*mt)() % replace_num];
           if (IsLegalNotEye(game, rep, color)) {
-            //PrintBoard(game); cerr << "REPLACE " << FormatMove(pos) << " -> " << FormatMove(rep) << endl;
+            //if (game->moves < 300) { PrintBoard(game); cerr << "REPLACE " << stone[color] << " " << FormatMove(pos) << " -> " << FormatMove(rep) << endl; }
             return rep;
           }
         }
